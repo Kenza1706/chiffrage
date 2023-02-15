@@ -22,7 +22,12 @@ st.set_page_config(
         layout="wide",
     )
 
-
+if "qte" not in st.session_state:
+        myFile = open("quantite_projet.xlsx", "w+")
+        dataframe=pd.DataFrame(columns=['Sous Système', 'N° préstation', 'Désignation','Travaux','Quantité','Taux forfaitaire unitaire JOUR',"Taux forfaitaire unitaire NUIT LONGUE","Fournitures unitaires","CMP"])
+        st.session_state.qte = dataframe
+        dataframe.to_excel("quantite_projet.xlsx",index=False)
+        
 
 if "data" not in st.session_state:
         st.session_state.data = load_data("BPU.xlsx")
@@ -33,6 +38,8 @@ if "syst" not in st.session_state:
     st.session_state.syst = load_data("Sous_Systeme.xlsx")
 if "soc" not in st.session_state:
         st.session_state.soc = load_data("prestation_equipement.xlsx")
+
+        
     
 HTML_BANNER = """
     <div style="background-color:#034980;padding:10px;border-radius:15px">

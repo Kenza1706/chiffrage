@@ -23,9 +23,14 @@ from pandas.api.types import (
     is_object_dtype,
 )
 
-myFile = open("quantite_projet.xlsx", "w+")
-dataframe=pd.DataFrame(columns=['Sous Système', 'N° prestation', 'Désignation','Traveaux','Quantité','Taux forfaitaire unitaire JOUR',"Taux forfaitaire unitaire NUIT LONGUE","Fournitures unitaires","CMP"])
-dataframe.to_excel("quantite_projet.xlsx",index=False)
+
+if "qte" not in st.session_state:
+        myFile = open("quantite_projet.xlsx", "w+")
+        dataframe=pd.DataFrame(columns=['Sous Système', 'N° préstation', 'Désignation','Travaux','Quantité','Taux forfaitaire unitaire JOUR',"Taux forfaitaire unitaire NUIT LONGUE","Fournitures unitaires","CMP"])
+        st.session_state.qte = dataframe
+        dataframe.to_excel("quantite_projet.xlsx",index=False)
+
+
 
 #@st.experimental_memo
 def load_data(text):
@@ -201,7 +206,7 @@ def f1() :
     data=st.session_state.data
     res = st.sidebar.radio("Choisir : ", ('Consulter 🔎', 'Rechercher 🕵️‍♂️','Ajouter 👈','Modifier ✍🏻','Supprimer ❌'))
     if (res=='Consulter 🔎'):
-        tab1, tab2,tab3= st.tabs(["Prestations", "Consultation des Sous Systèmes","Mise a jour des sous systemes"])
+        tab1, tab2,tab3= st.tabs(["Préstations", "Consultation des Sous Systèmes","Mise a jour des Sous Systèmes"])
         dat=st.session_state.syst
         with tab1:
                 gb = GridOptionsBuilder.from_dataframe(data)
@@ -226,7 +231,7 @@ def f1() :
                 selected = grid_response['selected_rows'] 
                 df = pd.DataFrame(selected)
                 df_xlsx = to_excell(data)
-                st.download_button(label='📥 Download',
+                st.download_button(label='📥 Télécharger',
                                         data=df_xlsx ,
                                         file_name= 'BPU.xlsx')
         with tab2:
@@ -252,25 +257,31 @@ def f1() :
                 selected = grid_response['selected_rows'] 
                 df = pd.DataFrame(selected)
                 df_xlsx = to_excell(dat)
-                st.download_button(label='📥 Download',
+                st.download_button(label='📥 Télécharger',
                                         data=df_xlsx ,
-                                        file_name= 'SOUS_SYSTEME.xlsx')
+                                        file_name= 'SOUS_SYSTEMES.xlsx')
         with tab3: 
+                dat = dat.astype(str)
                 res = st.radio("Choisir : ", ('Rechercher 🕵️‍♂️','Ajouter 👈'))
-                if res=='Rechercher 🕵️‍♂️':
+                if res=='Rechercher 🕵️‍♂️': 
                     st.dataframe(filter_dataframe(dat))
                 else:
                     d=dict()
-                    num=st.text_input("N°Sous Systeme :")
+                    num=st.text_input("N°Sous Système :")
                     des=st.text_input("Désignation :")
-                    d["N°Sous Système"]=num
+                    d["N°Sous Système"]=str(num)
                     d["Désignation"]=des
                     df_dictionary = pd.DataFrame([d])
                     if st.button("Ajouter"):
-                        dat = pd.concat([dat, df_dictionary], ignore_index=True)
-                        st.session_state.syst = dat
-                        dat.to_excel("Sous_Systeme.xlsx",index=False)
-                        st.success('Ajout éffectué avec succés!!!')
+                        s=st.session_state.syst
+                        s = s.astype(str)
+                        if str(num) not in (s["N°Sous Système"].unique()):
+                                dat = pd.concat([dat, df_dictionary], ignore_index=True)
+                                st.session_state.syst = dat
+                                dat.to_excel("Sous_Systeme.xlsx",index=False)
+                                st.success('Ajout éffectué avec succés!!!')
+                        else:
+                            st.error('Numero de sous système déja existant!!!')
                     
     elif (res=='Ajouter 👈'):
                    data=user_add_pres(data)
@@ -291,33 +302,32 @@ def f1() :
             
 def user_add_pres(data):
     with st.container():
-        st.subheader("Ajouter une prestation")
+        st.subheader("Ajouter une préstation")
         col1,col2 = st.columns(2)
         dd = st.session_state.syst
         d=dict()
         with col1:
-                sys=st.selectbox('Sous systeme:',data["Sous Système"].unique())
+                sys=st.selectbox('Sous système:',dd["N°Sous Système"].unique())
                 des=dd[dd["N°Sous Système"]==sys]
                 des=(des["Désignation"].unique())[0]
                 st.write('Sous système concerné :' ,des)
-                liste=((data[data['Sous Système']==sys])["Type prestation"]).unique()
-                prestation=st.selectbox('Type de la prestation:',liste)
+                liste=((data[data['Sous Système']==sys])["Type préstation"]).unique()
+                prestation=st.selectbox('Type de la préstation:',liste)
+                num_prix= st.text_input("N°préstation :")
                 designation= st.text_input("Désignation :")
                 unite=st.text_input("Unité:",'u')
-                fourniture= st.number_input('Fournitures:')
+                
         with col2:
-                mo= st.number_input("Temps de main d'oeuvre:")
-                mo_jour_h= st.number_input("Prix unitaire MO JOUR |Taux horaire:")
-                mo_nuit_ch= st.number_input("Prix unitaire MO NUIT COURTE |Taux horaire:")
-                mo_nuit_lh= st.number_input("Prix unitaire MO NUIT LONGUE |Taux horaire:")
-        numprix=((data[data['Type prestation']==prestation])["N° de prix "]).unique()
-        elems=((numprix[-1]).split('.'))
-        num_prix=elems[0]+'.'+ elems[1] +'.'+ str((int(((numprix[-1]).split('.'))[-1]))+1)
+                fourniture= st.number_input('Fournitures(€):')
+                mo= st.number_input("Temps de main d'oeuvre (heures):")
+                mo_jour_h= st.number_input("Prix unitaire MO JOUR |Taux horaire (€):")
+                mo_nuit_ch= st.number_input("Prix unitaire MO NUIT COURTE |Taux horaire (€):")
+                mo_nuit_lh= st.number_input("Prix unitaire MO NUIT LONGUE |Taux horaire (€):")
         d["N° de prix "]=num_prix
         d["Désignation"]=designation
         d["Unité"]=unite
         d["Sous Système"]=sys
-        d["Type prestation"]=prestation
+        d["Type préstation"]=prestation
         d['Fournitures \nP.U en euros']=fourniture
         d["Temps Main d'œuvre en heures"]=mo
         d['Prix unitaire MO JOUR (hors fourniture)|Taux horaire']=mo_jour_h
@@ -330,12 +340,17 @@ def user_add_pres(data):
         v3=float(mo)*float(mo_nuit_lh)
         d['Prix unitaire MO NUIT LONGUE (hors fourniture)|Taux forfaitaire']=float(mo)*float(mo_nuit_lh)
         if st.button('Ajouter ✅'):
-                st.success('Ajout éffectué avec succées!!!')
+            t=data.astype(str)
+            if str(num_prix) not in (t["N° de prix "].unique()):
+                st.success('Ajout éffectué avec succés!!!')
                 df_dictionary = pd.DataFrame([d])
                 data = pd.concat([data, df_dictionary], ignore_index=True)
                 data.reset_index(drop=True, inplace=True)
                 st.write(data)
-                return data         
+                return data  
+            else:
+                st.error('Numéro de préstation déja éxistant!!!')
+                return data
         else:
             return data
 def user_add_eq(data):
@@ -367,10 +382,10 @@ def user_add_eq(data):
                 d["N° de marché"]=marche
                 fabricant= st.text_input("Fabricant :")
                 d["Fabricant"]=fabricant
-                comment= st.text_area("libelleAchat:")
+                comment= st.text_area("Commentaire achat:")
                 d["libelleAchat"]=comment
                 dd =st.session_state.syst
-                sys=st.selectbox('Sous systeme:',dd['N°Sous Système'].unique())
+                sys=st.selectbox('Sous système:',dd['N°Sous Système'].unique())
                 des=dd[dd["N°Sous Système"]==sys]
                 des=(des["Désignation"].unique())[0]
                 st.write('Sous système concerné :' ,des)
@@ -387,7 +402,7 @@ def user_add_eq(data):
 
         
 def user_supp_pres(data):
-        st.subheader("Supprimer des prestations")
+        st.subheader("Supprimer des préstations")
         df_selected=table_interactive("BPU.xlsx")
         if st.button('Supprimer ❌'):
                 df_selected=df_selected.set_index("N° de prix ")
@@ -410,6 +425,37 @@ def user_supp_eq(data):
             pass
             
         return data
+def user_supp_qte():
+        data=st.session_state.qte
+        st.subheader("Supprimer des quantités")
+        gb = GridOptionsBuilder.from_dataframe(data)
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+        gb.configure_side_bar() #Add a sidebar
+        gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children")
+        gridOptions = gb.build()
+        grid_response = AgGrid(
+                data,
+                gridOptions=gridOptions,
+                data_return_mode='AS_INPUT', 
+                update_mode='MODEL_CHANGED', 
+                fit_columns_on_grid_load=True,
+                theme='alpine',
+                enable_enterprise_modules=True,
+                height = "800px", 
+                width='100%',
+                reload_data=False
+                )
+        data = grid_response['data']
+        selected = grid_response['selected_rows'] 
+        df_selected = pd.DataFrame(selected)
+        if st.button('Supprimer ❌'):
+                df_selected=df_selected.set_index("N° préstation")
+                for elem in list(df_selected.index):
+                        data=data[data["N° préstation"]!=elem]
+                st.success('Suppression éffectuée avec succés!!!')
+                return data
+        else:
+            return data
 def association(data,eq):
                 res = st.sidebar.radio("Choisir : ", ('Consulter 🔎', 'Rechercher 🕵️‍♂️','Ajouter 👈','Supprimer ❌'))
                 if res=='Consulter 🔎':
@@ -421,21 +467,21 @@ def association(data,eq):
                             for i in range(len(mdata)):
                                     d=dict()
                                     d["N° prix"]=mdata["N° de prix "][i]
-                                    d["Prestation"]=(((d1[d1["N° de prix "]==d["N° prix"]])["Désignation"]).unique())[0]
+                                    d["Préstation"]=(((d1[d1["N° de prix "]==d["N° prix"]])["Désignation"]).unique())[0]
                                     d["Référence Article"]=mdata["Référence Article"][i]
                                     d["Equipement"]=(((d2[d2["Référence Article"]==d["Référence Article"]])["Libellé Article"]).unique())[0]
                                     ll.append(d)
                             ll=pd.DataFrame(ll)
                             st.dataframe(filter_dataframe(ll)) 
                             df_xlsx = to_excell(ll)
-                            st.download_button(label='📥 Download',
+                            st.download_button(label='📥 Télécharger',
                                         data=df_xlsx ,
                                         file_name= 'PRESTATION-EQUIPEMENT.xlsx')
-                            agree = st.checkbox('Filtrage par prestation',key='teest')
+                            agree = st.checkbox('Filtrage par préstation',key='teest')
                             if agree:
-                                prestation=st.selectbox('Prestation:',ll["Prestation"].unique())
+                                prestation=st.selectbox('Préstation:',ll["Préstation"].unique())
                                 if st.button("OK"):
-                                    st.dataframe(ll[ll["Prestation"]==prestation])
+                                    st.dataframe(ll[ll["Préstation"]==prestation])
                             
                     else:
                         st.warning('Aucune association trouvée!!!')
@@ -501,7 +547,7 @@ def association(data,eq):
                                     st.write(dd)
                                     st.session_state.soc=dd
                                     df_xlsx = to_excell(dd)
-                                    st.download_button(label='📥 Download',
+                                    st.download_button(label='📥 Télécharger',
                                         data=df_xlsx ,
                                         file_name= 'PRESTATION_EQUIPEMETS.xlsx')
                             else:
@@ -509,57 +555,62 @@ def association(data,eq):
                 else :
                     res=st.session_state.soc
                     liste=res["N° de prix "].unique()
-                    num=st.selectbox('Référence prestation:',liste)
+                    num=st.selectbox('Référence préstation:',liste)
                     if st.button("Supprimer cette association"):
                             st.session_state.soc=res[(res["N° de prix "]!=num) ]
                             st.success('Association supprimée avec succés!!!')
                             (res).to_excel('prestation_equipement.xlsx',index=False)
 def manage_quantite():
         res = st.sidebar.radio("Choisir : ", ('Consulter 🔎', 'Rechercher 🕵️‍♂️','Ajouter 👈','Modifier ✍🏻','Supprimer ❌'))
-        fusion=pd.read_excel("quantite_projet.xlsx")
+        fusion=st.session_state.qte
         if res =='Consulter 🔎':
             if fusion.shape[0] >0:
-                    st.dataframe(filter_dataframe(fusion))
+                   st.write(fusion) 
             else:
                 st.error("Aucune quantité trouvée")
                     
-        elif res=='Rechercher 🕵️‍':
+        elif res=='Rechercher 🕵️‍♂️':
             if fusion.shape[0] >0:
-                    st.succes("yeees!!!")
+                 st.dataframe(filter_dataframe(fusion))
             else:
                 st.error("Aucune quantité trouvée")
         elif res=='Ajouter 👈':
                 quantite(fusion)
         elif res=='Modifier ✍🏻':
             if fusion.shape[0] >0:
-                    st.succes("yeees!!!")
+                fusion=update(fusion)
+                st.session_state.qte = fusion
+                (st.session_state.qte).to_excel('quantite_projet.xlsx',index=False)
             else:
                 st.error("Aucune quantité trouvée")
         else:
                 if fusion.shape[0] >0:
-                    st.succes("yeees!!!")
+                    d=st.session_state.qte.copy()
+                    d=user_supp_qte()
+                    st.session_state.qte=d.copy()
+                    (d).to_excel('quantite_projet.xlsx',index=False)
                 else:
-                        st.error("Aucune quantité trouvée")
+                        st.error("Aucune quantité trouvée!!")
                        
 def quantite(fusion):
                 dictionnaire=dict()
                 data=st.session_state.data
                 eq=st.session_state.eq
                 dd = st.session_state.syst
-                sys=st.selectbox('Sous systeme:',data["Sous Système"].unique())
+                sys=st.selectbox('Sous système:',data["Sous Système"].unique())
                 des=dd[dd["N°Sous Système"]==sys]
                 des=(des["Désignation"].unique())[0]
                 st.write('Sous système concerné :' ,des)
                 liste=((data[data['Sous Système']==sys])["Désignation"]).unique()
-                prestation=st.selectbox('Prestation:',liste)
+                prestation=st.selectbox('Préstation:',liste)
                 travaux=st.selectbox('Travaux:',['JOUR','NUIT COURTE','NUIT LONGUE'])
                 qt= st.number_input("Quantité:",min_value=0)
                 ll=(data[data['Désignation']==prestation])
                 num_prestation=(ll["N° de prix "].unique())[0]
                 dictionnaire["Sous Système"]=sys
-                dictionnaire["N° prestation"]=num_prestation
+                dictionnaire["N° préstation"]=num_prestation
                 dictionnaire["Désignation"]=prestation
-                dictionnaire["Traveaux"]=travaux
+                dictionnaire["Travaux"]=travaux
                 dictionnaire["Quantité"]=qt
                 dictionnaire["Taux forfaitaire unitaire JOUR"]=(ll["Prix unitaire MO JOUR (hors fourniture)|Taux forfaitaire"].unique())[0]
                 dictionnaire["Taux forfaitaire unitaire NUIT COURTE"]=(ll["Prix unitaire MO NUIT COURTE (hors fourniture)|Taux forfaitaire"].unique())[0]
@@ -578,7 +629,7 @@ def quantite(fusion):
                 gridOptions=gridOptions,
                 data_return_mode='AS_INPUT', 
                 update_mode='MODEL_CHANGED', 
-                fit_columns_on_grid_load=False,
+                fit_columns_on_grid_load=True,
                 theme='alpine',
                 enable_enterprise_modules=True,
                 height = "800px", 
@@ -594,11 +645,13 @@ def quantite(fusion):
                     if (s[0] >0):
                         dictionnaire["CMP"]=(df["CMP (€)"]).sum()
                     fusion= pd.concat([fusion,dictionnaire], ignore_index=True)
+                    
                     fusion.to_excel('quantite_projet.xlsx',index=False)
                     st.success('Quantité ajoutée avec succés!!!')
+                    st.session_state.qte=fusion
                     st.write(fusion)
                     df_xlsx = to_excell(fusion)
-                    st.download_button(label='📥 Download',
+                    st.download_button(label='📥 Télécharger',
                                 data=df_xlsx ,
                                 file_name= 'QUANTITE PROJET.xlsx')
 def to_excell(df):
@@ -641,10 +694,10 @@ def estimation_totale():
                             d=dict()
                             d["N°Sous Système"]=df["Sous Système"][i]
                             d["Désignation"]=df["Désignation"][i]
-                            d["Travaux"]=df["Traveaux"][i]
-                            d["CMP prestation unitaire"]=df["CMP"][i]
-                            d["Fournitures prestation unitaire"]=df["Fournitures unitaires"][i]
-                            if (df["Traveaux"][i])== 'JOUR' :
+                            d["Travaux"]=df["Travaux"][i]
+                            d["CMP préstation unitaire"]=df["CMP"][i]
+                            d["Fournitures préstation unitaire"]=df["Fournitures unitaires"][i]
+                            if (df["Travaux"][i])== 'JOUR' :
                                 d["COUT MO"]=(int(df["Quantité"][i]))*(float(df["Taux forfaitaire unitaire JOUR"][i]))
                             elif (df["Traveaux"][i])== 'NUIT COURTE':
                                 d["COUT MO"]=(int(df["Quantité"][i]))*(float(df["Taux forfaitaire unitaire NUIT COURTE"][i]))
@@ -654,7 +707,7 @@ def estimation_totale():
                             d["COUT TOTAL"]=d["COUT MO"]+d["COUT FOURNITURE"]
                             ll.append(d)
                         res=pd.DataFrame(ll)
-                        tab1, tab2, tab3,tab4 = st.tabs(["Estimation générale", "Estimations par prestation", "Estimations par ce systemes","Visualisations"])
+                        tab1, tab2, tab3,tab4 = st.tabs(["Estimation générale", "Estimations par préstation", "Estimations par sous système","Visualisations"])
                         with tab1:
                                 st.markdown("""
                 <style>
@@ -680,12 +733,12 @@ def estimation_totale():
                                 b=res["COUT FOURNITURE"].sum()
                                 st.metric('COUT DE FOURNITURE',b)
                                 c=res["COUT MO"].sum()
-                                st.metric('COUT DE MAIN D OEUVRE',c)
+                                st.metric("COUT DE MAIN D'OEUVRE",c)
                         with tab2:
                                 st.write(res)
                                 res.to_excel("Estimation.xlsx",index=False)
                                 df_xlsx = to_excell(res)
-                                st.download_button(label='📥 Download',
+                                st.download_button(label='📥 Télécharger',
                                                 data=df_xlsx ,
                                                 file_name= 'ESTIMATION.xlsx')
                         with tab3:
@@ -710,16 +763,16 @@ def estimation_totale():
                                  m=get_dataframe(res)
                                  col1, col2= st.columns(2)
                                  with col1:
-                                       fig = px.bar(m, x = 'Désignation',y = 'COUT FOURNITURE',title = 'Cout Fourniture par sous systeme' )
+                                       fig = px.bar(m, x = 'Désignation',y = 'COUT FOURNITURE',title = 'Cout Fourniture par sous système' )
                                        st.plotly_chart(fig)
-                                       fig = px.bar(m, x = 'Désignation',y = 'COUT MO',title = 'Cout MO par sous systeme' )
+                                       fig = px.bar(m, x = 'Désignation',y = 'COUT MO',title = 'Cout MO par sous système' )
                                        st.plotly_chart(fig)  
                                        
                                         
                                  with col2:
-                                       fig = px.bar(res, x = 'Désignation',y = 'COUT FOURNITURE',title = 'Cout Fourniture par prestation' )
+                                       fig = px.bar(res, x = 'Désignation',y = 'COUT FOURNITURE',title = 'Cout Fourniture par préstation' )
                                        st.plotly_chart(fig)
-                                       fig = px.bar(res, x = 'Désignation',y = 'COUT MO',title = 'Cout MO par prestation' )
+                                       fig = px.bar(res, x = 'Désignation',y = 'COUT MO',title = 'Cout MO par préstation' )
                                        st.plotly_chart(fig)
                                 
                                 
