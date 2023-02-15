@@ -403,7 +403,27 @@ def user_add_eq(data):
         
 def user_supp_pres(data):
         st.subheader("Supprimer des préstations")
-        df_selected=table_interactive("BPU.xlsx")
+        gb = GridOptionsBuilder.from_dataframe(data)
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+        gb.configure_side_bar() #Add a sidebar
+        gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+        gridOptions = gb.build()
+        grid_response = AgGrid(
+            data,
+            gridOptions=gridOptions,
+            data_return_mode='AS_INPUT', 
+            update_mode='MODEL_CHANGED', 
+            fit_columns_on_grid_load=False,
+            theme='alpine', #Add theme color to the table
+            enable_enterprise_modules=True,
+            height = "800px", 
+            width='100%',
+            reload_data=False
+        )
+
+        data = grid_response['data']
+        selected = grid_response['selected_rows'] 
+        df_selected = pd.DataFrame(selected)
         if st.button('Supprimer ❌'):
                 df_selected=df_selected.set_index("N° de prix ")
                 for elem in list(df_selected.index):
@@ -415,7 +435,27 @@ def user_supp_pres(data):
         return data
 def user_supp_eq(data):
         st.subheader("Supprimer des équipements")
-        df_selected=table_interactive("Equipements.xlsx")
+        gb = GridOptionsBuilder.from_dataframe(data)
+        gb.configure_pagination(paginationAutoPageSize=True) #Add pagination
+        gb.configure_side_bar() #Add a sidebar
+        gb.configure_selection('multiple', use_checkbox=True, groupSelectsChildren="Group checkbox select children") #Enable multi-row selection
+        gridOptions = gb.build()
+        grid_response = AgGrid(
+            data,
+            gridOptions=gridOptions,
+            data_return_mode='AS_INPUT', 
+            update_mode='MODEL_CHANGED', 
+            fit_columns_on_grid_load=False,
+            theme='alpine', #Add theme color to the table
+            enable_enterprise_modules=True,
+            height = "800px", 
+            width='100%',
+            reload_data=False
+        )
+
+        data = grid_response['data']
+        selected = grid_response['selected_rows'] 
+        df_selected = pd.DataFrame(selected)
         if st.button('Supprimer ❌'):
                 df_selected=df_selected.set_index("Référence Article")
                 for elem in list(df_selected.index):
