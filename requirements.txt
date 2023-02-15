@@ -1,4 +1,4 @@
-﻿plotly-express
+plotly-express
 streamlit-aggrid
 streamlit-option-menu
 pandas 
