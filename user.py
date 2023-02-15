@@ -86,7 +86,7 @@ def f2() :
             enable_enterprise_modules=True,
             height = "800px", 
             width='100%',
-            reload_data=True
+            reload_data=False
         )
 
         data = grid_response['data']
@@ -129,7 +129,7 @@ def table_interactive(text):
             enable_enterprise_modules=True,
             height = "800px", 
             width='100%',
-            reload_data=True
+            reload_data=False
         )
 
         data = grid_response['data']
@@ -224,7 +224,7 @@ def f1() :
                     theme='alpine',
                     height = "800px", 
                     width='100%',
-                    reload_data=True
+                    reload_data=False
                 )
 
                 data = grid_response['data']
@@ -250,7 +250,7 @@ def f1() :
                     theme='alpine',
                     height = "800px", 
                     width='100%',
-                    reload_data=True
+                    reload_data=False
                 )
 
                 data = grid_response['data']
@@ -445,8 +445,8 @@ def user_supp_qte():
                 width='100%',
                 reload_data=False
                 )
-        data = grid_response['data']
-        selected = grid_response['selected_rows'] 
+        data= grid_response['data']
+        selected = grid_response['selected_rows']        
         df_selected = pd.DataFrame(selected)
         if st.button('Supprimer ❌'):
                 df_selected=df_selected.set_index("N° préstation")
@@ -522,7 +522,7 @@ def association(data,eq):
                         enable_enterprise_modules=True,
                         height = "800px", 
                         width='100%',
-                        reload_data=True
+                        reload_data=False
                 )
 
                         eqq = grid_response['data']
@@ -634,7 +634,7 @@ def quantite(fusion):
                 enable_enterprise_modules=True,
                 height = "800px", 
                 width='100%',
-                reload_data=True
+                reload_data=False
                 )
                 eqq = grid_response['data']
                 selected = grid_response['selected_rows'] 
